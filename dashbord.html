@@ -328,179 +328,217 @@ body {
                 <label for="product-description">Description:</label>
                 <textarea id="product-description" required></textarea>
 
-                <label for="product-image">Image URL:</label>
-                <input type="text" id="product-image" required>
+                <label for="product-image">Add Image:</label>
+                <input type="file" id="product-image" />
 
                 <button type="submit">Add Product</button>
             </form>
         </div>
     </div>
-    <script>
-        // API URL
-        const apiUrl = "https://fakestoreapi.com/products"; 
-    
-        // Fetch and display products
-        async function fetchProducts() {
-            try {
-                const response = await fetch(apiUrl);
-                const products = await response.json();
-    
-                renderProducts(products);
-                updateTotalProducts(products.length);
-            } catch (error) {
-                console.error("Error fetching products:", error);
-                alert("Failed to load products.");
-            }
-        }
-    
-        // Render products in the grid
-        function renderProducts(products) {
-            const gridContainer = document.getElementById("product-grid");
-            gridContainer.innerHTML = products
-                .map((product) => createProductHTML(product))
-                .join("");
-        }
-    
-        // Create product HTML
-        function createProductHTML(product) {
-            return `
-                <div class="product-card" id="product-${product.id}">
-                    <img src="${product.image}" alt="${product.title}" class="product-image">
-                    <div class="product-details">
-                        <h3 class="product-title">${product.title}</h3>
-                        <p class="product-price">$${product.price}</p>
-                        <p class="product-description">${product.description.slice(0, 100)}...</p>
-                        <button onclick="editProduct(${product.id})">Edit</button>
-                        <button onclick="deleteProduct(${product.id})">Delete</button>
-                    </div>
-                </div>
-            `;
-        }
-    
-        // Modal handlers
-        function openModal() {
-            document.getElementById("product-modal").classList.add("active");
-        }
-    
-        function closeModal() {
-            document.getElementById("product-modal").classList.remove("active");
-        }
-    
-        // Handle Add Product form submission
-        document.getElementById("add-product-form").addEventListener("submit", (event) => {
-            event.preventDefault();
-    
-            const productData = {
-                title: document.getElementById("product-name").value,
-                price: document.getElementById("product-price").value,
-                description: document.getElementById("product-description").value,
-                image: document.getElementById("product-image").value,
-            };
-    
-            addProduct(productData);
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+
+// API URL
+const apiUrl = "https://fakestoreapi.com/products";
+
+// Fetch and display products
+async function fetchProducts() {
+    try {
+        const response = await fetch(apiUrl);
+        const products = await response.json();
+        renderProducts(products);
+        updateTotalProducts(products.length);
+    } catch (error) {
+        console.error("Error fetching products:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load products.',
+            background: '#f8d7da', // Optional: Customize background color
+            confirmButtonColor: '#dc3545' // Optional: Customize button color
         });
-    
-        // Add new product
-        async function addProduct(productData) {
-            try {
-                const response = await fetch(apiUrl, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(productData),
-                });
-    
-                if (response.ok) {
-                    const newProduct = await response.json();
-                    renderNewProduct(newProduct);
-                    incrementTotalProducts();
-                    alert("Product added successfully!");
-                } else {
-                    alert("Failed to add product.");
-                }
-            } catch (error) {
-                console.error("Error adding product:", error);
-                alert("An error occurred. Please try again.");
-            }
+    }
+}
+
+// Render products in the grid
+function renderProducts(products) {
+    const gridContainer = document.getElementById("product-grid");
+    gridContainer.innerHTML = products
+        .map((product) => createProductHTML(product))
+        .join("");
+}
+
+// Create product HTML
+function createProductHTML(product) {
+    return `
+        <div class="product-card" id="product-${product.id}">
+            <img src="${product.image}" alt="${product.title}" class="product-image">
+            <div class="product-details">
+                <h3 class="product-title">${product.title}</h3>
+                <p class="product-price">$${product.price}</p>
+                <p class="product-description">${product.description.slice(0, 100)}...</p>
+                <button onclick="editProduct(${product.id})">Edit</button>
+                <button onclick="deleteProduct(${product.id})">Delete</button>
+            </div>
+        </div>
+    `;
+}
+
+// Modal handlers
+function openModal() {
+    document.getElementById("product-modal").classList.add("active");
+}
+
+function closeModal() {
+    document.getElementById("product-modal").classList.remove("active");
+}
+
+// Handle Add Product form submission
+document.getElementById("add-product-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const productData = {
+        title: document.getElementById("product-name").value,
+        price: document.getElementById("product-price").value,
+        description: document.getElementById("product-description").value,
+        image: document.getElementById("product-image").files[0] ? URL.createObjectURL(document.getElementById("product-image").files[0]) : "", // Handle image upload
+    };
+
+    addProduct(productData);
+});
+
+// Add new product
+async function addProduct(productData) {
+    try {
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(productData),
+        });
+
+        if (response.ok) {
+            const newProduct = await response.json();
+            renderNewProduct(newProduct);
+            incrementTotalProducts();
+            Swal.fire({
+                icon: 'success',
+                title: 'Product Added!',
+                text: 'Your product has been added successfully.',
+                background: '#d4edda',
+                confirmButtonColor: '#28a745'
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Failed to Add Product',
+                text: 'Something went wrong. Please try again.',
+                background: '#f8d7da',
+                confirmButtonColor: '#dc3545'
+            });
         }
-    
-        // Render new product in the grid
-        function renderNewProduct(product) {
-            const gridContainer = document.getElementById("product-grid");
-            gridContainer.innerHTML += createProductHTML(product);
-        }
-    
-        // Update total products count
-        function updateTotalProducts(count) {
-            document.getElementById("total-products").textContent = count;
-        }
-    
-        // Increment total products count
-        function incrementTotalProducts() {
-            const totalProductsElement = document.getElementById("total-products");
-            const currentCount = parseInt(totalProductsElement.textContent, 10);
-            totalProductsElement.textContent = currentCount + 1;
-        }
-    
-        // Delete product
-        function deleteProduct(productId) {
-            const productCard = document.getElementById(`product-${productId}`);
-            if (productCard) {
-                productCard.remove();
-                decrementTotalProducts();
-                alert(`Product with ID ${productId} deleted.`);
-            }
-        }
-    
-        // Decrement total products count
-        function decrementTotalProducts() {
-            const totalProductsElement = document.getElementById("total-products");
-            const currentCount = parseInt(totalProductsElement.textContent, 10);
-            totalProductsElement.textContent = currentCount - 1;
-        }
-    
-        // Edit product
-        function editProduct(productId) {
-            const productCard = document.getElementById(`product-${productId}`);
-            if (!productCard) return;
-    
-            // Fetch current data
-            const title = productCard.querySelector(".product-title").textContent;
-            const price = productCard.querySelector(".product-price").textContent.slice(1);
-            const description = productCard.querySelector(".product-description").textContent;
-    
-            // Pre-fill modal
-            document.getElementById("product-name").value = title;
-            document.getElementById("product-price").value = price;
-            document.getElementById("product-description").value = description;
-            openModal();
-    
-            // Update product on save
-            document.getElementById("add-product-form").onsubmit = (event) => {
-                event.preventDefault();
-    
-                const updatedData = {
-                    title: document.getElementById("product-name").value,
-                    price: document.getElementById("product-price").value,
-                    description: document.getElementById("product-description").value,
-                    image: productCard.querySelector(".product-image").src,
-                };
-    
-                productCard.outerHTML = createProductHTML({
-                    id: productId,
-                    ...updatedData,
-                });
-    
-                closeModal();
-                alert("Product updated successfully!");
-            };
-        }
-    
-        // Fetch products on page load
-        window.addEventListener("DOMContentLoaded", fetchProducts);
-    </script>
-    
+    } catch (error) {
+        console.error("Error adding product:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'An error occurred. Please try again.',
+            background: '#f8d7da',
+            confirmButtonColor: '#dc3545'
+        });
+    }
+}
+
+// Render new product in the grid
+function renderNewProduct(product) {
+    const gridContainer = document.getElementById("product-grid");
+    gridContainer.innerHTML += createProductHTML(product);
+}
+
+// Update total products count
+function updateTotalProducts(count) {
+    document.getElementById("total-products").textContent = count;
+}
+
+// Increment total products count
+function incrementTotalProducts() {
+    const totalProductsElement = document.getElementById("total-products");
+    const currentCount = parseInt(totalProductsElement.textContent, 10);
+    totalProductsElement.textContent = currentCount + 1;
+}
+
+// Delete product
+function deleteProduct(productId) {
+    const productCard = document.getElementById(`product-${productId}`);
+    if (productCard) {
+        productCard.remove();
+        decrementTotalProducts();
+        Swal.fire({
+            icon: 'success',
+            title: 'Product Deleted',
+            text: `Product with ID ${productId} has been deleted.`,
+            background: '#d4edda',
+            confirmButtonColor: '#28a745'
+        });
+    }
+}
+
+// Decrement total products count
+function decrementTotalProducts() {
+    const totalProductsElement = document.getElementById("total-products");
+    const currentCount = parseInt(totalProductsElement.textContent, 10);
+    totalProductsElement.textContent = currentCount - 1;
+}
+
+// Edit product
+function editProduct(productId) {
+    const productCard = document.getElementById(`product-${productId}`);
+    if (!productCard) return;
+
+    // Fetch current data
+    const title = productCard.querySelector(".product-title").textContent;
+    const price = productCard.querySelector(".product-price").textContent.slice(1);
+    const description = productCard.querySelector(".product-description").textContent;
+
+    // Pre-fill modal
+    document.getElementById("product-name").value = title;
+    document.getElementById("product-price").value = price;
+    document.getElementById("product-description").value = description;
+    openModal();
+
+    // Update product on save
+    document.getElementById("add-product-form").onsubmit = (event) => {
+        event.preventDefault();
+
+        const updatedData = {
+            title: document.getElementById("product-name").value,
+            price: document.getElementById("product-price").value,
+            description: document.getElementById("product-description").value,
+            image: productCard.querySelector(".product-image").src, // Retaining current image
+        };
+
+        productCard.outerHTML = createProductHTML({
+            id: productId,
+            ...updatedData,
+        });
+
+        closeModal();
+        Swal.fire({
+            icon: 'success',
+            title: 'Product Updated',
+            text: 'Your product has been updated successfully.',
+            background: '#d4edda',
+            confirmButtonColor: '#28a745'
+        });
+    };
+}
+
+// Fetch products on page load
+window.addEventListener("DOMContentLoaded", fetchProducts);
+
+</script>
+
     
 </body>
 </html>
